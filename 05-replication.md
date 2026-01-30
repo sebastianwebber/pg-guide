@@ -88,31 +88,112 @@ PostgreSQL's **streaming replication** replicates at the physical level (WAL rec
 - **Cons**: Potential data loss if primary crashes before standby receives WAL
 
 **Synchronous replication**
-- Primary waits for standby to confirm WAL receipt before commit returns
-- Guarantees zero data loss (standby has all committed transactions)
-- **Pros**: No data loss on primary failure
+- Primary waits for standby confirmation before COMMIT returns to client
+- What "confirmation" means depends on `synchronous_commit` level (see below)
+- **Pros**: Zero data loss on primary failure (when using `on` or `remote_apply`)
 - **Cons**: Higher latency (network round-trip), standby failure can block commits
 
 **Configuration:**
 
-```
-# On primary server
-synchronous_commit = on                    # Wait for sync (default: on)
+```ini
+# On primary server (postgresql.conf)
+synchronous_commit = on                    # Commit level (see table below)
 synchronous_standby_names = 'standby1'     # Which standbys to wait for
 ```
 
-**synchronous_commit levels:**
+**synchronous_commit levels explained:**
 
-| Level | Wait for | Use case | Data loss risk |
-|-------|----------|----------|----------------|
-| `off` | Nothing | Maximum performance | High (even local crash) |
-| `local` (default) | Local WAL write | Balanced | On primary failure before replication |
-| `remote_write` | Standby receives WAL | Better protection | On standby OS crash |
-| `on` | Standby writes WAL to disk | Zero data loss | None (on sync standby) |
-| `remote_apply` | Standby applies WAL | Read-your-writes consistency | None |
+| Level | Client waits for | Standby status | Data loss risk | Use case |
+|-------|------------------|----------------|----------------|----------|
+| `off` | Nothing (returns immediately) | WAL sent async | **High** (even local crash) | Non-critical data, maximum speed |
+| `local` | Local WAL fsync | WAL sent async | On crash before replication | **Default** - balanced |
+| `remote_write` | WAL sent to standby OS | In OS buffer (not disk yet) | On standby OS crash | Better than async, faster than `on` |
+| `on` | WAL written to standby disk | On disk, not applied | **None** (on sync standby) | **Production HA** - zero data loss |
+| `remote_apply` | WAL applied on standby | Applied and queryable | **None** + read consistency | Strongest guarantee, read-your-writes |
+
+> [!TIP]
+> **Minimum**: Use `synchronous_commit = local` or higher (never `off` in production). **Recommended**: Use `synchronous_commit = on` if the performance penalty is acceptable - this provides zero data loss on primary failure. The latency increase (one network round-trip per commit) is usually acceptable for most workloads compared to the data protection benefit.
+
+**Detailed explanation:**
+
+```
+Transaction commit flow with synchronous_commit = 'on':
+
+Client                Primary               Standby
+  │                      │                     │
+  │  COMMIT;             │                     │
+  ├─────────────────────>│                     │
+  │                      │                     │
+  │                      │ 1. Write WAL local  │
+  │                      │    (to disk)        │
+  │                      │                     │
+  │                      │ 2. Send WAL ──────> │
+  │                      │                     │
+  │                      │                     │ 3. Write WAL to disk
+  │                      │                     │
+  │                      │ 4. ACK <────────────┤
+  │                      │                     │
+  │  5. SUCCESS          │                     │
+  │ <────────────────────┤                     │
+  │                      │                     │
+  │ Client can proceed   │                     │
+  │ (transaction durable)│                     │
+
+With remote_apply:
+  Steps 1-2 same, then:
+  3. Write WAL to disk
+  4. Apply WAL to database (UPDATE visible on standby)
+  5. ACK back to primary
+  6. Primary returns SUCCESS to client
+```
 
 > [!WARNING]
 > `synchronous_commit = off` is dangerous even without replication - disables local fsync waiting. Use with extreme caution.
+
+**Multiple synchronous standbys (quorum):**
+
+```ini
+# Wait for ANY 1 of 3 standbys
+synchronous_standby_names = 'ANY 1 (standby1, standby2, standby3)'
+
+# Wait for FIRST 2 of 3 standbys (most common for HA)
+synchronous_standby_names = 'FIRST 2 (standby1, standby2, standby3)'
+
+# Priority-based: wait for standby1, fallback to standby2 if standby1 fails
+synchronous_standby_names = 'FIRST 1 (standby1, standby2)'
+```
+
+**What happens when a synchronous standby fails?**
+
+With `FIRST 2 (standby1, standby2, standby3)`:
+
+```
+Scenario 1: All standbys healthy
+- Primary waits for ANY 2 of the 3 standbys to confirm
+- Commit completes normally
+
+Scenario 2: One standby (standby3) fails
+- Primary waits for standby1 + standby2 (still 2 healthy standbys)
+- Commit completes normally
+- standby3 reconnects later and replays missed WAL asynchronously
+- No data inconsistency - all commits were confirmed by required quorum
+
+Scenario 3: Two standbys fail (only 1 healthy)
+- Primary CANNOT commit (needs 2, has only 1)
+- Transactions HANG waiting for standbys to recover
+- Client applications will timeout
+- Fix: reduce synchronous_standby_names or restore failed standbys
+```
+
+> [!IMPORTANT]
+> PostgreSQL never commits a transaction unless the required number of standbys confirm. There is **no inconsistency** - if a commit hangs because standbys are down, the transaction is not committed anywhere. Either all required standbys confirm and commit succeeds, or the client times out and can retry.
+
+**Best practice for HA:**
+
+Provision N+1 standbys for resilience:
+- Need 2 synchronous confirmations? Provision 3 standbys
+- Configure: `synchronous_standby_names = 'FIRST 2 (standby1, standby2, standby3)'`
+- Can lose 1 standby without blocking commits
 
 #### Failover and Promotion
 
@@ -641,3 +722,6 @@ ls -la /var/lib/postgresql/data/*.signal
 3. [PostgreSQL Documentation: pg_stat_replication](https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW)
 4. [PostgreSQL Documentation: Replication Slots](https://www.postgresql.org/docs/current/warm-standby.html#STREAMING-REPLICATION-SLOTS)
 5. [PostgreSQL Documentation: Logical Replication](https://www.postgresql.org/docs/current/logical-replication.html)
+6. [High Availability and Scalable Reads in PostgreSQL](https://www.tigerdata.com/blog/scalable-postgresql-high-availability-read-scalability-streaming-replication-fb95023e2af)
+7. [Best Practices for Postgres Database Replication](https://www.tigerdata.com/learn/best-practices-for-postgres-database-replication)
+8. [Bulletproofing Your Database With Multiple PostgreSQL Replicas](https://www.tigerdata.com/blog/bulletproofing-your-database-with-multiple-postgresql-replicas)
