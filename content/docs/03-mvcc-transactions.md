@@ -24,14 +24,106 @@ weight: 3
 - Transaction IDs are used to determine row visibility
 - **xid wraparound**: After ~4 billion transactions, IDs wrap around (autovacuum prevents issues)
 
+#### Row-Level Lock Modes
+
+PostgreSQL has 4 row-level lock modes, ordered from lightest to heaviest. They exist to separate **primary key protection** from **full row protection**, which allows foreign key checks to run without blocking unrelated updates.
+
+**`FOR KEY SHARE`** — "I just need to make sure this **primary key still exists**"
+- Acquired implicitly by foreign key checks. When you `INSERT INTO order_items (order_id, ...)`, PostgreSQL locks the parent `orders` row with `FOR KEY SHARE` to guarantee it won't be deleted or have its PK changed mid-flight
+- Lightest lock — allows UPDATEs on non-key columns and coexists with almost everything
+
+**`FOR SHARE`** — "I'm reading this row and **nothing should change** until I'm done"
+- Acquired explicitly via `SELECT ... FOR SHARE`
+- Blocks any UPDATE or DELETE, but allows other `FOR SHARE` readers
+
+**`FOR NO KEY UPDATE`** — "I'm going to **modify this row, but not the primary key**"
+- Acquired implicitly by most UPDATEs (e.g., `UPDATE orders SET price = 10` — PK untouched)
+- Blocks other writers, but still allows `FOR KEY SHARE` — so FK checks on this row are **not blocked**
+
+**`FOR KEY UPDATE`** — "I'm going to **change the primary key or delete this row**"
+- Acquired implicitly by `DELETE` or `UPDATE` on PK/unique columns
+- Heaviest lock — exclusive, blocks everything
+
+**Compatibility matrix** (✓ = can coexist on the same row):
+
+```
+                      FOR KEY SHARE   FOR SHARE   FOR NO KEY UPDATE   FOR KEY UPDATE
+FOR KEY SHARE               ✓              ✓              ✓                  ✗
+FOR SHARE                   ✓              ✓              ✗                  ✗
+FOR NO KEY UPDATE           ✓              ✗              ✗                  ✗
+FOR KEY UPDATE              ✗              ✗              ✗                  ✗
+```
+
+The key insight: `FOR NO KEY UPDATE` (most UPDATEs) is compatible with `FOR KEY SHARE` (FK checks). Without this separation, every `UPDATE SET price = 10` would block concurrent `INSERT INTO order_items` — making foreign key-heavy schemas much slower.
+
+**Visual example: how lock modes interact with foreign keys**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Table: orders (parent)           Table: order_items (child)            │
+│  ┌─────────────────────┐          ┌──────────────────────────┐          │
+│  │ id │ price │ status │          │ id │ order_id │ product  │          │
+│  │  1 │ 99.90 │ open   │          │    │    FK ───┼──→ orders.id        │
+│  └─────────────────────┘          └──────────────────────────┘          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Session A:  UPDATE orders SET price = 79.90 WHERE id = 1;              │
+│              → acquires FOR NO KEY UPDATE on orders(id=1)               │
+│              → PK not changed, just price                               │
+│                                                                         │
+│  Session B:  INSERT INTO order_items (order_id, product)                │
+│              VALUES (1, 'widget');                                      │
+│              → acquires FOR KEY SHARE on orders(id=1) to validate FK    │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────┐                    │
+│  │ orders row (id=1)                               │                    │
+│  │                                                 │                    │
+│  │   Session A: FOR NO KEY UPDATE  ──┐             │                    │
+│  │                                   ├─ compatible │                    │
+│  │   Session B: FOR KEY SHARE  ──────┘    (✓)      │                    │
+│  │                                                 │                    │
+│  │   Both proceed without blocking!                │                    │
+│  └─────────────────────────────────────────────────┘                    │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│  What if Session A was DELETE instead?                                  │
+│                                                                         │
+│  Session A:  DELETE FROM orders WHERE id = 1;                           │
+│              → acquires FOR KEY UPDATE on orders(id=1)                  │
+│              → PK will be removed                                       │
+│                                                                         │
+│  Session B:  INSERT INTO order_items (order_id, product)                │
+│              VALUES (1, 'widget');                                      │
+│              → needs FOR KEY SHARE on orders(id=1)                      │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────┐                    │
+│  │ orders row (id=1)                               │                    │
+│  │                                                 │                    │
+│  │   Session A: FOR KEY UPDATE  ─────┐             │                    │
+│  │                                   ├─ conflict!  │                    │
+│  │   Session B: FOR KEY SHARE  ──────┘    (✗)      │                    │
+│  │                                                 │                    │
+│  │   Session B WAITS until Session A commits       │                    │
+│  │   or rolls back                                 │                    │
+│  └─────────────────────────────────────────────────┘                    │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+> [!NOTE]
+> `FOR KEY SHARE` and `FOR NO KEY UPDATE` are the most common locks in practice. You rarely see `FOR SHARE` or `FOR KEY UPDATE` unless the application uses them explicitly or modifies primary key columns.
+
 #### MultiXact IDs
 
-When multiple transactions need to hold shared row-level locks on the same row, PostgreSQL can't store all their transaction IDs in the tuple header (which only has space for a single `xmax`). Instead, it creates a **MultiXact ID** — a single identifier that maps to a group of transactions and their lock modes.
+When two or more compatible locks coexist on the same row, PostgreSQL needs to record all of them. But the tuple header only has one `xmax` field — space for a single transaction ID. The solution: a **MultiXact ID**, a single value stored in `xmax` that points to a list of transactions and their lock modes in `pg_multixact/`.
 
 **When are MultiXact IDs created?**
 
-- `SELECT ... FOR SHARE` or `SELECT ... FOR KEY SHARE` by multiple concurrent transactions on the same row
-- **Foreign key checks**: When a child row references a parent, PostgreSQL acquires a `FOR KEY SHARE` lock on the parent row. With concurrent inserts referencing the same parent, this generates MultiXact IDs
+Any combination of compatible locks from the matrix above generates a MultiXact. In practice, the dominant case is:
+
+- **Foreign key checks**: Each `INSERT INTO child_table` acquires `FOR KEY SHARE` on the parent row. With concurrent inserts referencing the same parent, multiple `FOR KEY SHARE` locks coexist → MultiXact
+- Multiple `SELECT ... FOR SHARE` on the same row
+- `FOR KEY SHARE` (FK check) coexisting with `FOR NO KEY UPDATE` (UPDATE on non-key columns)
 
 **How it works:**
 
