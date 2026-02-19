@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default "en" }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if not .IsHome }}{{ .Title }} | {{ end }}{{ .Site.Title }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Title }}{{ end }}">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ "css/syntax.css" | relURL }}">
+  <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+
+  <script>
+    document.documentElement.setAttribute('data-theme',
+      localStorage.getItem('theme') || 'dark'
+    );
+  </script>
+</head>
+<body>
+  {{- partial "navbar.html" . -}}
+
+  <div class="main-layout">
+    <aside id="sidebar" class="sidebar">
+      {{- partial "sidebar.html" . -}}
+    </aside>
+
+    <div class="doc-content">
+      <div class="doc-wrapper">
+        <article class="content markdown-body">
+          {{- block "main" . }}{{ end -}}
+        </article>
+        <div class="toc-column is-hidden-touch">
+          {{- partial "toc.html" . -}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ "js/main.js" | relURL }}"></script>
+</body>
+</html>

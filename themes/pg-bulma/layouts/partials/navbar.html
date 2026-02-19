@@ -1,0 +1,28 @@
+<nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a class="navbar-item navbar-brand-group" href="{{ .Site.BaseURL }}">
+      <img src="{{ "img/postgresql-logo.svg" | relURL }}" alt="PostgreSQL" class="navbar-logo mr-2">
+      <span class="navbar-brand-text">
+        <span class="navbar-title">{{ .Site.Title }}</span>
+        <span class="navbar-subtitle">{{ .Site.Params.Subtitle }}</span>
+      </span>
+    </a>
+
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="sidebar">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+
+  <div id="navMenu" class="navbar-menu">
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <button id="theme-toggle" class="button is-small is-dark" aria-label="Toggle theme">
+          <span class="icon"><i class="fa-solid fa-moon"></i></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,10 @@
+{{ define "main" }}
+  {{ .Content }}
+  {{ with .File }}
+  <div class="edit-page">
+    <a href="{{ $.Site.Params.BookRepo }}/edit/main/{{ .Path }}" target="_blank" rel="noopener">
+      <i class="fas fa-pen-to-square"></i> Edit this page
+    </a>
+  </div>
+  {{ end }}
+{{ end }}

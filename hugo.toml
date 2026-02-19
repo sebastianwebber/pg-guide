@@ -1,0 +1,22 @@
+baseURL = 'https://sebastianwebber.github.io/pg-guide/'
+languageCode = 'pt-br'
+title = 'PostgreSQL Guide'
+theme = 'pg-bulma'
+
+disablePathToLower = true
+enableGitInfo = true
+
+[markup]
+[markup.goldmark.renderer]
+  unsafe = true
+
+[markup.tableOfContents]
+  startLevel = 2
+  endLevel = 4
+
+[markup.highlight]
+  noClasses = false
+
+[params]
+  BookRepo = 'https://github.com/sebastianwebber/pg-guide'
+  Subtitle = 'For OPS engineers'

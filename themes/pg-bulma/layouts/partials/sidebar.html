@@ -1,0 +1,28 @@
+<div class="menu p-4">
+  <p class="menu-label">Chapters</p>
+  <ul class="menu-list">
+    {{ $current := . }}
+    {{ $section := .Site.GetPage "/docs" }}
+    {{ if $section }}
+      {{ range $section.Pages.ByWeight }}
+      <li>
+        <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $current.RelPermalink }} class="is-active"{{ end }}>
+          {{ .Title }}
+        </a>
+      </li>
+      {{ end }}
+    {{ end }}
+  </ul>
+
+  <p class="menu-label mt-5">Links</p>
+  <ul class="menu-list">
+    <li>
+      <a href="{{ .Site.Params.BookRepo }}" target="_blank" rel="noreferrer">
+        <span class="icon-text">
+          <span class="icon"><i class="fab fa-github"></i></span>
+          <span>GitHub</span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</div>

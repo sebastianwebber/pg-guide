@@ -1,0 +1,34 @@
+{{ if eq .Type "alert" }}
+{{ $bulmaType := "is-info" }}
+{{ $icon := "fa-circle-info" }}
+{{ $label := "Note" }}
+{{ if eq .AlertType "tip" }}
+  {{ $bulmaType = "is-success" }}
+  {{ $icon = "fa-lightbulb" }}
+  {{ $label = "Tip" }}
+{{ else if eq .AlertType "important" }}
+  {{ $bulmaType = "is-link" }}
+  {{ $icon = "fa-circle-exclamation" }}
+  {{ $label = "Important" }}
+{{ else if eq .AlertType "warning" }}
+  {{ $bulmaType = "is-warning" }}
+  {{ $icon = "fa-triangle-exclamation" }}
+  {{ $label = "Warning" }}
+{{ else if eq .AlertType "caution" }}
+  {{ $bulmaType = "is-danger" }}
+  {{ $icon = "fa-octagon-exclamation" }}
+  {{ $label = "Caution" }}
+{{ end }}
+<article class="message {{ $bulmaType }} github-alert">
+  <div class="message-header">
+    <p><i class="fa-solid {{ $icon }} mr-1"></i> {{ $label }}</p>
+  </div>
+  <div class="message-body">
+    {{ .Text }}
+  </div>
+</article>
+{{ else }}
+<blockquote>
+  {{ .Text }}
+</blockquote>
+{{ end }}

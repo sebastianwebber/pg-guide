@@ -1,0 +1,14 @@
+{{ define "main" }}
+  {{ .Content }}
+
+  {{ if .Pages }}
+  <div class="mt-5">
+    {{ range .Pages.ByWeight }}
+    <a href="{{ .RelPermalink }}" class="box doc-card">
+      <p class="is-size-5 has-text-weight-semibold">{{ .Title }}</p>
+      {{ with .Description }}<p class="has-text-grey">{{ . }}</p>{{ end }}
+    </a>
+    {{ end }}
+  </div>
+  {{ end }}
+{{ end }}
