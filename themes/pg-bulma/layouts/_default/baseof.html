@@ -33,9 +33,11 @@
         <article class="content markdown-body">
           {{- block "main" . }}{{ end -}}
         </article>
+        {{- if not .IsHome -}}
         <div class="toc-column is-hidden-touch">
           {{- partial "toc.html" . -}}
         </div>
+        {{- end -}}
       </div>
     </div>
   </div>
