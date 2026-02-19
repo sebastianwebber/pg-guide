@@ -363,7 +363,7 @@ Subscriber:
 
 **Key differences from physical replication:**
 - Table-level granularity (not whole database)
-- **Only native way to replicate between different PostgreSQL versions** (e.g., PG 14 to PG 15)
+- **Only native way to replicate between different PostgreSQL versions** (e.g., PG 15 to PG 16, PG 16 to PG 18)
 - Allows filtering and transformation
 - Higher overhead (decoding + re-executing operations)
 - No automatic failover (not covered in detail here)
