@@ -65,24 +65,13 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-top: 6rem;
-  transition: padding-top 0.3s ease;
-}
-
-body.is-scrolled {
-  padding-top: 3.25rem;
+  padding-top: 0;
 }
 
 /* ── Navbar ────────────────────────────────────────────────── */
 .navbar.is-dark {
   background-color: #111 !important;
   border-bottom: 1px solid #222;
-  min-height: 6rem;
-  transition: min-height 0.3s ease;
-}
-
-body.is-scrolled .navbar.is-dark {
-  min-height: 3.25rem;
 }
 
 .navbar.is-dark .navbar-item,
@@ -107,13 +96,9 @@ body.is-scrolled .navbar.is-dark {
 }
 
 .navbar-logo {
-  height: 56px;
+  height: 64px !important;
+  max-height: none !important;
   width: auto;
-  transition: height 0.3s ease;
-}
-
-body.is-scrolled .navbar-logo {
-  height: 24px;
 }
 
 .navbar-brand-text {
@@ -124,26 +109,15 @@ body.is-scrolled .navbar-logo {
 
 .navbar-title {
   font-weight: 700;
-  font-size: 1.35rem;
-  color: #e8e8e8;
-  transition: font-size 0.3s ease;
-}
-
-body.is-scrolled .navbar-title {
-  font-size: 0.9rem;
+  font-size: 1.5rem;
+  color: #fff;
 }
 
 .navbar-subtitle {
   font-weight: 400;
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.9rem;
+  color: #999;
   letter-spacing: 0.02em;
-  transition: font-size 0.3s ease, opacity 0.3s ease;
-}
-
-body.is-scrolled .navbar-subtitle {
-  font-size: 0;
-  opacity: 0;
 }
 
 #theme-toggle {
@@ -162,7 +136,7 @@ body.is-scrolled .navbar-subtitle {
 /* ── Layout ────────────────────────────────────────────────── */
 .main-layout {
   display: flex;
-  min-height: calc(100vh - 6rem);
+  min-height: 100vh;
 }
 
 /* ── Sidebar ───────────────────────────────────────────────── */
@@ -173,15 +147,9 @@ body.is-scrolled .navbar-subtitle {
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
   position: sticky;
-  top: 6rem;
-  height: calc(100vh - 6rem);
-  transition: top 0.3s ease, height 0.3s ease;
+  top: 0;
+  height: 100vh;
   overflow-y: auto;
-}
-
-body.is-scrolled .sidebar {
-  top: 3.25rem;
-  height: calc(100vh - 3.25rem);
 }
 
 /* ── Sidebar content (Bulma Menu) ──────────────────────────── */
@@ -257,10 +225,6 @@ body.is-scrolled .sidebar {
     box-shadow: none;
   }
 
-  .is-scrolled .sidebar {
-    top: 3.25rem;
-  }
-
   .sidebar.is-open {
     transform: translateX(0);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
@@ -278,14 +242,9 @@ body.is-scrolled .sidebar {
 /* ── Table of Contents ─────────────────────────────────────── */
 .toc-panel {
   position: sticky;
-  top: 6.5rem;
+  top: 1rem;
   padding-left: 1rem;
   border-left: 1px solid var(--border);
-  transition: top 0.3s ease;
-}
-
-body.is-scrolled .toc-panel {
-  top: 3.75rem;
 }
 
 .toc-panel .menu-label {
@@ -596,13 +555,8 @@ body.is-scrolled .toc-panel {
   min-width: 260px;
   flex-shrink: 0;
   position: sticky;
-  top: 6.5rem;
+  top: 1rem;
   align-self: flex-start;
-  transition: top 0.3s ease;
-}
-
-body.is-scrolled .home-chapters {
-  top: 3.75rem;
 }
 
 .home-chapters h3 {

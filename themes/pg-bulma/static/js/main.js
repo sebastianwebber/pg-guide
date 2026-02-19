@@ -25,14 +25,4 @@ document.querySelectorAll('.navbar-burger').forEach(el => {
   });
 });
 
-// Shrink navbar on scroll
-let ticking = false;
-window.addEventListener('scroll', () => {
-  if (!ticking) {
-    requestAnimationFrame(() => {
-      document.body.classList.toggle('is-scrolled', window.scrollY > 50);
-      ticking = false;
-    });
-    ticking = true;
-  }
-});
+
