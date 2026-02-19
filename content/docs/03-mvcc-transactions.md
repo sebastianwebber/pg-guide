@@ -24,6 +24,52 @@ weight: 3
 - Transaction IDs are used to determine row visibility
 - **xid wraparound**: After ~4 billion transactions, IDs wrap around (autovacuum prevents issues)
 
+#### MultiXact IDs
+
+When multiple transactions need to hold shared row-level locks on the same row, PostgreSQL can't store all their transaction IDs in the tuple header (which only has space for a single `xmax`). Instead, it creates a **MultiXact ID** — a single identifier that maps to a group of transactions and their lock modes.
+
+**When are MultiXact IDs created?**
+
+- `SELECT ... FOR SHARE` or `SELECT ... FOR KEY SHARE` by multiple concurrent transactions on the same row
+- **Foreign key checks**: When a child row references a parent, PostgreSQL acquires a `FOR KEY SHARE` lock on the parent row. With concurrent inserts referencing the same parent, this generates MultiXact IDs
+
+**How it works:**
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Two transactions lock the same row with FOR SHARE                    │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  [A] SELECT * FROM orders WHERE id=1 FOR SHARE;  (xid=500)           │
+│  [B] SELECT * FROM orders WHERE id=1 FOR SHARE;  (xid=501)           │
+│                                                                      │
+│  Tuple header can only hold ONE xmax value:                          │
+│                                                                      │
+│  ┌─────────────────────────────────────┐                             │
+│  │ orders row (id=1)                   │                             │
+│  │   xmin = 100                        │                             │
+│  │   xmax = MultiXactId(42)  ◄─────────┼── single ID for the group   │
+│  └─────────────────────────────────────┘                             │
+│                                                                      │
+│  pg_multixact/ maps MultiXactId(42) to:                              │
+│  ┌──────────────────────────────────────┐                            │
+│  │ offsets/  → MultiXact 42 has 2 members                            │
+│  │ members/  → xid=500 (share), xid=501 (share)                      │
+│  └──────────────────────────────────────┘                            │
+│                                                                      │
+│  Common in workloads with foreign keys:                              │
+│  INSERT INTO order_items (order_id, ...) VALUES (1, ...);            │
+│  → acquires FOR KEY SHARE on orders(id=1)                            │
+│  → with concurrent inserts, this creates MultiXact IDs               │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**MultiXact IDs have the same wraparound problem as transaction IDs** — they use a 32-bit counter and require VACUUM to freeze old values. PostgreSQL tracks MultiXact age separately with dedicated parameters (`vacuum_multixact_freeze_min_age`, `vacuum_multixact_freeze_table_age`, `autovacuum_multixact_freeze_max_age`).
+
+> [!IMPORTANT]
+> Workloads with heavy foreign key usage or shared row locks can generate MultiXact IDs much faster than regular transaction IDs. Monitor both `age(datfrozenxid)` and `mxid_age(datminmxid)` to avoid wraparound.
+
 #### Visibility Rules
 
 - Each transaction sees a consistent snapshot of the database
@@ -415,6 +461,65 @@ ORDER BY age(datfrozenxid) DESC;
 - **Long-running transactions prevent vacuum** from advancing frozenxid
 - Test your monitoring - this is a **preventable disaster**
 
+### Check MultiXact ID Age (multixact wraparound risk)
+
+> [!CAUTION]
+> MultiXact ID wraparound follows the same 32-bit counter logic as xid wraparound. Workloads with foreign keys and shared locks can hit this limit much faster than expected.
+
+MultiXact IDs require separate monitoring because they have their own freeze cycle, independent from transaction ID freezing.
+
+```sql
+SELECT
+    datname,
+    mxid_age(datminmxid) AS multixact_age,
+    2147483648 - mxid_age(datminmxid) AS mxids_until_wraparound,
+    ROUND(100.0 * mxid_age(datminmxid) / 2147483648, 2) AS pct_toward_wraparound,
+    CASE
+        WHEN mxid_age(datminmxid) > 2000000000 THEN 'EMERGENCY - DB WILL SHUT DOWN'
+        WHEN mxid_age(datminmxid) > 1500000000 THEN 'CRITICAL - Immediate action required'
+        WHEN mxid_age(datminmxid) > 1000000000 THEN 'WARNING - Schedule aggressive vacuum'
+        ELSE 'OK'
+    END AS status
+FROM pg_database
+ORDER BY mxid_age(datminmxid) DESC;
+```
+
+**Example output:**
+```
+  datname  | multixact_age | mxids_until_wraparound | pct_toward_wraparound | status
+-----------+---------------+------------------------+-----------------------+--------
+ myapp_db  |     180000000 |             1967483648 |                  8.38 | OK
+ postgres  |       1000000 |             2146483648 |                  0.05 | OK
+```
+
+**What to look for:**
+- Same thresholds as xid wraparound apply (alert at 40-50%)
+- Compare `mxid_age(datminmxid)` against `age(datfrozenxid)` — if multixact age is growing faster, your workload generates shared locks heavily
+- Tables with the highest multixact age may need manual `VACUUM FREEZE`
+
+**Per-table monitoring:**
+
+```sql
+SELECT
+    schemaname,
+    relname,
+    mxid_age(relminmxid) AS multixact_age,
+    age(relfrozenxid) AS xid_age
+FROM pg_class
+WHERE relkind = 'r'
+ORDER BY mxid_age(relminmxid) DESC
+LIMIT 10;
+```
+
+**What to look for:**
+- Tables where `multixact_age` is much higher than `xid_age` — these are your foreign key / shared lock hotspots
+- If `multixact_age` is approaching `autovacuum_multixact_freeze_max_age` (default: 400 million), autovacuum will trigger aggressive freezing
+
+**Key parameters:**
+- `vacuum_multixact_freeze_min_age` (default: 5 million): minimum age before freezing multixact IDs
+- `vacuum_multixact_freeze_table_age` (default: 150 million): triggers full-table scan for multixact freezing
+- `autovacuum_multixact_freeze_max_age` (default: 400 million): forces aggressive autovacuum
+
 ### Monitor for Serialization Errors
 
 If using REPEATABLE READ or SERIALIZABLE isolation levels:
@@ -555,6 +660,59 @@ ORDER BY age(datfrozenxid) DESC;
 3. Ensure autovacuum is enabled and tuned appropriately
 4. Monitor xid age regularly (alert at 40%)
 
+### Problem: MultiXact ID wraparound approaching
+
+**Symptom**: Autovacuum running aggressively on tables with foreign keys, warnings about multixact wraparound in logs, or standby crashes during WAL replay of multixact truncation records
+
+**Cause**:
+- Workloads with heavy foreign key usage generate MultiXact IDs on every child row insert (parent row gets `FOR KEY SHARE` lock)
+- Concurrent transactions locking the same rows with `SELECT ... FOR SHARE`
+- VACUUM not running frequently enough to freeze old MultiXact IDs
+
+**Investigation**:
+```sql
+-- Check database-level multixact age
+SELECT
+    datname,
+    mxid_age(datminmxid) AS multixact_age,
+    age(datfrozenxid) AS xid_age
+FROM pg_database
+ORDER BY mxid_age(datminmxid) DESC;
+
+-- Find tables driving multixact growth
+SELECT
+    schemaname,
+    relname,
+    mxid_age(relminmxid) AS multixact_age,
+    age(relfrozenxid) AS xid_age,
+    last_autovacuum
+FROM pg_class
+JOIN pg_stat_user_tables USING (relname)
+WHERE relkind = 'r'
+ORDER BY mxid_age(relminmxid) DESC
+LIMIT 10;
+```
+
+**Solutions**:
+1. **Immediate**: Run VACUUM FREEZE on tables with highest multixact age
+   ```sql
+   VACUUM FREEZE table_name;
+   ```
+2. Lower `autovacuum_multixact_freeze_max_age` for affected tables:
+   ```sql
+   ALTER TABLE parent_table SET (autovacuum_multixact_freeze_max_age = 200000000);
+   ```
+3. Review schema design — tables referenced by many foreign keys are multixact hotspots
+4. Monitor `mxid_age(datminmxid)` alongside `age(datfrozenxid)` in your alerting
+
+> [!WARNING]
+> **Known bug in PostgreSQL 17.8**: A regression (commit `8ba61bc063`) causes standbys to crash during WAL replay of `MultiXact/TRUNCATE_ID` records when streaming from an older minor version (e.g., 17.5 primary → 17.8 standby). The crash manifests as:
+> ```
+> FATAL: could not access status of transaction NNNN
+> DETAIL: Could not read from file "pg_multixact/offsets/XXXX" at offset YYYY: read too few bytes.
+> ```
+> The root cause was a backward-compatibility check that incorrectly reset `latest_page_number` during multixact truncation replay. A fix was committed by Heikki Linnakangas ([discussion](https://www.postgresql.org/message-id/CACV2tSw3VYS7d27ftO_cs%2BaF3M54%2BJwWBbqSGLcKoG9cvyb6EA%40mail.gmail.com)). When upgrading minor versions in a replication cluster, upgrade standbys and primary together to avoid this class of issue.
+
 ### Problem: Serialization errors in application
 
 **Symptom**: Application receiving `could not serialize access` errors
@@ -617,3 +775,5 @@ WHERE query LIKE '%VACUUM%';
 4. [PostgreSQL Documentation: Heap-Only Tuples (HOT)](https://www.postgresql.org/docs/current/storage-hot.html)
 5. [The Internals of PostgreSQL: Concurrency Control](https://www.interdb.jp/pg/pgsql05.html)
 6. [How to Reduce Your PostgreSQL Database Size](https://www.tigerdata.com/blog/how-to-reduce-your-postgresql-database-size)
+7. [PostgreSQL Documentation: MultiXact](https://www.postgresql.org/docs/current/routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND)
+8. [PostgreSQL 17.8 Standby Crash Bug (MultiXact TRUNCATE_ID replay)](https://www.postgresql.org/message-id/CACV2tSw3VYS7d27ftO_cs%2BaF3M54%2BJwWBbqSGLcKoG9cvyb6EA%40mail.gmail.com)
