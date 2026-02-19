@@ -459,14 +459,19 @@ body.is-scrolled .toc-panel {
 /* ── GitHub Alerts (Bulma message) ─────────────────────────── */
 .message.github-alert {
   border-radius: 6px;
-  border: 1px solid var(--border);
+  border: none;
   border-left: 4px solid;
   margin: 1.25rem 0;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .message.github-alert {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .message.github-alert .message-header {
-  background-color: transparent;
+  background-color: transparent !important;
   border: none;
   padding: 0.75rem 1rem 0.25rem;
   font-weight: 600;
@@ -480,6 +485,7 @@ body.is-scrolled .toc-panel {
   padding: 0.25rem 1rem 0.75rem;
   color: var(--text);
   font-size: 0.9rem;
+  background-color: transparent !important;
 }
 
 .message.github-alert .message-body p {
@@ -493,35 +499,35 @@ body.is-scrolled .toc-panel {
 /* Note — blue */
 .message.is-info.github-alert {
   border-left-color: #3b82f6;
-  background: var(--alert-note-bg);
+  background: var(--alert-note-bg) !important;
 }
 .message.is-info.github-alert .message-header { color: #3b82f6; }
 
 /* Tip — green */
 .message.is-success.github-alert {
   border-left-color: #16a34a;
-  background: var(--alert-tip-bg);
+  background: var(--alert-tip-bg) !important;
 }
 .message.is-success.github-alert .message-header { color: #16a34a; }
 
 /* Important — purple */
 .message.is-link.github-alert {
   border-left-color: #8b5cf6;
-  background: var(--alert-important-bg);
+  background: var(--alert-important-bg) !important;
 }
 .message.is-link.github-alert .message-header { color: #8b5cf6; }
 
 /* Warning — amber */
 .message.is-warning.github-alert {
   border-left-color: #d97706;
-  background: var(--alert-warning-bg);
+  background: var(--alert-warning-bg) !important;
 }
 .message.is-warning.github-alert .message-header { color: #d97706; }
 
 /* Caution — red */
 .message.is-danger.github-alert {
   border-left-color: #dc2626;
-  background: var(--alert-caution-bg);
+  background: var(--alert-caution-bg) !important;
 }
 .message.is-danger.github-alert .message-header { color: #dc2626; }
 
