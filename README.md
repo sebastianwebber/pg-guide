@@ -1,5 +1,7 @@
 # PostgreSQL Core Concepts and Operations Guide
 
+This project is now a website: https://sebastianwebber.github.io/pg-guide/
+
 ## Purpose
 
 This guide is designed to help platform engineers, software developers, Kubernetes specialists, and network engineers understand the essential PostgreSQL concepts and architecture that affect day-to-day operations.
@@ -70,6 +72,3 @@ This is a living document. If you find gaps, errors, or have suggestions for imp
 
 ## TODO
 - [ ] expand patroni session into a whole chapter
-
-
-https://pgdog.dev/blog/shard-your-database
