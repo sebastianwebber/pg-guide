@@ -1,0 +1,37 @@
+{{ define "main" }}
+<div class="home-layout">
+  <div class="home-intro content markdown-body">
+    <h1>PostgreSQL Core Concepts and Operations Guide</h1>
+    <p>This guide is designed to help platform engineers, software developers, Kubernetes specialists, and network engineers understand the essential PostgreSQL concepts and architecture that affect day-to-day operations.</p>
+
+    <h2>Target Audience</h2>
+    <ul>
+      <li>Platform engineers</li>
+      <li>Kubernetes/Infrastructure specialists</li>
+      <li>Software developers</li>
+      <li>Network engineers</li>
+      <li>Anyone operating PostgreSQL in production environments</li>
+    </ul>
+
+    <h2>How to Use This Guide</h2>
+    <p>Each topic is structured as follows:</p>
+    <ul>
+      <li><strong>What is it?</strong> — Core concepts explained</li>
+      <li><strong>Why it matters</strong> — Operational impact and importance</li>
+      <li><strong>How to monitor</strong> — Practical queries and metrics</li>
+      <li><strong>Common problems</strong> — Symptoms and solutions</li>
+      <li><strong>References</strong> — Official documentation and resources</li>
+    </ul>
+    <p>Start with topics relevant to your current challenges, or read sequentially for comprehensive understanding.</p>
+  </div>
+
+  <nav class="home-chapters">
+    <h3>Chapters</h3>
+    <ul>
+      {{ range (site.GetPage "/docs").Pages.ByWeight }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    </ul>
+  </nav>
+</div>
+{{ end }}

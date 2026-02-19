@@ -2,13 +2,10 @@
   {{ .Content }}
 
   {{ if .Pages }}
-  <div class="mt-5">
+  <ul class="chapter-list">
     {{ range .Pages.ByWeight }}
-    <a href="{{ .RelPermalink }}" class="box doc-card">
-      <p class="is-size-5 has-text-weight-semibold">{{ .Title }}</p>
-      {{ with .Description }}<p class="has-text-grey">{{ . }}</p>{{ end }}
-    </a>
+    <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
     {{ end }}
-  </div>
+  </ul>
   {{ end }}
 {{ end }}
