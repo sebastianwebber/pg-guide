@@ -157,7 +157,7 @@ Any combination of compatible locks from the matrix above generates a MultiXact.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**MultiXact IDs have the same wraparound problem as transaction IDs** — they use a 32-bit counter and require VACUUM to freeze old values. PostgreSQL tracks MultiXact age separately with dedicated parameters (`vacuum_multixact_freeze_min_age`, `vacuum_multixact_freeze_table_age`, `autovacuum_multixact_freeze_max_age`).
+**MultiXact IDs have the same wraparound problem as transaction IDs** — they use a 32-bit counter and require VACUUM to freeze old values. PostgreSQL tracks MultiXact age separately with dedicated parameters (`vacuum_multixact_freeze_min_age`, `vacuum_multixact_freeze_table_age`, `autovacuum_multixact_freeze_max_age`). Freezing MultiXact IDs has the same I/O cost as freezing xids — see [Maintenance: VACUUM Freeze]({{< ref "10-maintenance#freeze" >}}).
 
 > [!IMPORTANT]
 > Workloads with heavy foreign key usage or shared row locks can generate MultiXact IDs much faster than regular transaction IDs. Monitor both `age(datfrozenxid)` and `mxid_age(datminmxid)` to avoid wraparound.
@@ -401,6 +401,9 @@ VACUUM FREEZE is a special operation that replaces old transaction IDs (xids) wi
 - **Autovacuum** automatically freezes tuples older than `vacuum_freeze_min_age` (default: 50 million transactions)
 - **Aggressive autovacuum** runs when database age reaches `autovacuum_freeze_max_age` (default: 200 million transactions)
 - **Manual VACUUM FREEZE** can be run explicitly: `VACUUM FREEZE table_name;`
+
+> [!NOTE]
+> VACUUM FREEZE also freezes old **MultiXact IDs**, not just transaction IDs. The same process applies with its own set of parameters (`vacuum_multixact_freeze_min_age`, `autovacuum_multixact_freeze_max_age`). See [Maintenance]({{< ref "10-maintenance#freeze" >}}) for details on the I/O impact of freeze operations.
 
 **Why it prevents wraparound:**
 
