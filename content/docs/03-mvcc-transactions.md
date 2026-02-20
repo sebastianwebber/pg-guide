@@ -752,7 +752,7 @@ ORDER BY age(datfrozenxid) DESC;
 3. Ensure autovacuum is enabled and tuned appropriately
 4. Monitor xid age regularly (alert at 40%)
 
-### Problem: MultiXact ID wraparound approaching
+### Problem: MultiXact exhaustion on FK-heavy workloads
 
 **Symptom**: Autovacuum running aggressively on tables with foreign keys, warnings about multixact wraparound in logs, or standby crashes during WAL replay of multixact truncation records
 
