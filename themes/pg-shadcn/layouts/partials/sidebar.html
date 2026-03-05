@@ -1,0 +1,16 @@
+<div class="p-4">
+  <p class="text-[0.65rem] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-600 mb-3">Chapters</p>
+  <ul class="space-y-0.5">
+    {{ $current := . }}
+    {{ $section := .Site.GetPage "/docs" }}
+    {{ if $section }}
+      {{ range $section.Pages.ByWeight }}
+      <li>
+        <a href="{{ .RelPermalink }}" class="block px-3 py-1.5 text-sm rounded-md transition-colors duration-150 {{ if eq .RelPermalink $current.RelPermalink }}bg-zinc-900/10 dark:bg-zinc-100/10 text-zinc-900 dark:text-zinc-50 font-medium{{ else }}text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50{{ end }}">
+          {{ .Title }}
+        </a>
+      </li>
+      {{ end }}
+    {{ end }}
+  </ul>
+</div>

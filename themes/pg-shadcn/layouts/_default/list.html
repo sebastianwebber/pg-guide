@@ -1,0 +1,10 @@
+{{ define "main" }}
+  {{ .Content }}
+  {{ if .Pages }}
+  <ul class="space-y-1 mt-4">
+    {{ range .Pages.ByWeight }}
+    <li><a href="{{ .RelPermalink }}" class="text-[#f76b15] hover:text-[#ff8c3a] hover:underline">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+  {{ end }}
+{{ end }}

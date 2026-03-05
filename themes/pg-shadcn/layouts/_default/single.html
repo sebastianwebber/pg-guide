@@ -1,0 +1,10 @@
+{{ define "main" }}
+  {{ .Content }}
+  {{ with .File }}
+  <div class="mt-12 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+    <a href="{{ $.Site.Params.BookRepo }}/edit/main/{{ .Path }}" class="text-sm text-zinc-400 dark:text-zinc-600 hover:text-[#f76b15] flex items-center gap-1.5 no-underline transition-colors">
+      <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit this page
+    </a>
+  </div>
+  {{ end }}
+{{ end }}

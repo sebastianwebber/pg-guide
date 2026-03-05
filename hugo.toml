@@ -1,7 +1,7 @@
 baseURL = 'https://sebastianwebber.github.io/pg-guide/'
 languageCode = 'pt-br'
 title = 'PostgreSQL Guide'
-theme = 'pg-bulma'
+theme = 'pg-shadcn'
 
 disablePathToLower = true
 enableGitInfo = true

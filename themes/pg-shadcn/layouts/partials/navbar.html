@@ -1,0 +1,26 @@
+<nav class="sticky top-0 z-40 h-[60px] bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-4 flex items-center justify-between" role="navigation" aria-label="main navigation">
+  <div class="flex items-center">
+    <a class="flex items-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 no-underline transition-colors" href="{{ .Site.BaseURL }}">
+      <img src="{{ "img/postgresql-logo.svg" | relURL }}" alt="PostgreSQL" class="h-10 w-auto mr-3">
+      <span class="flex flex-col leading-tight">
+        <span class="font-bold text-lg text-zinc-900 dark:text-zinc-50">{{ .Site.Title }}</span>
+        <span class="font-normal text-xs text-zinc-500 dark:text-zinc-400 tracking-wide">{{ .Site.Params.Subtitle }}</span>
+      </span>
+    </a>
+  </div>
+
+  <button class="lg:hidden inline-flex items-center justify-center rounded-md p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors" aria-label="Toggle menu" aria-expanded="false" data-target="sidebar">
+    <i data-lucide="menu" class="w-5 h-5"></i>
+  </button>
+
+  <div class="hidden lg:flex items-center gap-2">
+    <a class="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors no-underline" href="{{ .Site.Params.BookRepo }}" target="_blank" rel="noreferrer" aria-label="GitHub">
+      <i data-lucide="github" class="w-4 h-4"></i>
+      <span>Contribute</span>
+    </a>
+    <button id="theme-toggle" class="inline-flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors cursor-pointer bg-transparent" aria-label="Toggle theme">
+      <i data-lucide="moon" id="icon-dark" class="w-4 h-4"></i>
+      <i data-lucide="sun" id="icon-light" class="w-4 h-4" style="display:none"></i>
+    </button>
+  </div>
+</nav>

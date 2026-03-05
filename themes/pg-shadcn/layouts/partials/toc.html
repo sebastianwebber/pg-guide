@@ -1,0 +1,8 @@
+{{ if .TableOfContents }}
+<div class="toc-panel sticky top-4 pl-4 border-l border-zinc-200 dark:border-zinc-800">
+  <p class="text-[0.65rem] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-600 mb-2">On this page</p>
+  <div class="toc-content text-[0.78rem]">
+    {{ .TableOfContents }}
+  </div>
+</div>
+{{ end }}

@@ -1,0 +1,230 @@
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+.sidebar-panel.is-open {
+  transform: translateX(0) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Markdown body typography ─────────────────────────────── */
+.markdown-body h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+.markdown-body h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding-bottom: 0.4em;
+  margin-top: 2.5em;
+  margin-bottom: 0.8em;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown-body h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+  color: var(--foreground);
+}
+
+.markdown-body h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+/* ── Inline code ──────────────────────────────────────────── */
+.markdown-body code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+  color: var(--brand);
+}
+
+/* ── Code blocks ──────────────────────────────────────────── */
+.markdown-body pre {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0 1.5rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.markdown-body pre code {
+  font-family: 'JetBrains Mono', monospace;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+.highlight pre {
+  background: var(--muted) !important;
+  border: 1px solid var(--border);
+}
+
+/* ── Links ────────────────────────────────────────────────── */
+.markdown-body a {
+  color: var(--brand);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.markdown-body a:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+}
+
+/* ── Tables ───────────────────────────────────────────────── */
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin: 1rem 0;
+  display: table;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.markdown-body table td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.markdown-body table tr:hover td {
+  background: var(--accent);
+}
+
+/* ── Lists ────────────────────────────────────────────────── */
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.5rem 0 0.5rem 1.5rem;
+}
+
+.markdown-body li {
+  margin: 0.25rem 0;
+}
+
+.markdown-body li code {
+  font-size: 0.82em;
+}
+
+/* ── Horizontal rule ──────────────────────────────────────── */
+.markdown-body hr {
+  background: var(--border);
+  height: 1px;
+  border: none;
+  margin: 2.5rem 0;
+}
+
+/* ── Strong ───────────────────────────────────────────────── */
+.markdown-body strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* ── Footnotes ────────────────────────────────────────────── */
+.markdown-body .footnotes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+/* ── Blockquotes ──────────────────────────────────────────── */
+.markdown-body blockquote {
+  border-left: 3px solid var(--border);
+  background: var(--accent);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+/* ── Alert code styling ───────────────────────────────────── */
+.github-alert .alert-body code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+  color: var(--brand);
+}
+
+.github-alert .alert-body pre {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.github-alert .alert-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+.github-alert .alert-body p {
+  margin-bottom: 0.5rem;
+}
+
+.github-alert .alert-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Table of contents ────────────────────────────────────── */
+.toc-content nav > ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-content nav > ul > li {
+  margin: 0;
+}
+
+.toc-content a {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  display: block;
+  padding: 0.2em 0;
+  transition: color 0.15s;
+  line-height: 1.5;
+}
+
+.toc-content a:hover {
+  color: var(--brand);
+}
+
+.toc-content ul ul {
+  padding-left: 0.8rem;
+}

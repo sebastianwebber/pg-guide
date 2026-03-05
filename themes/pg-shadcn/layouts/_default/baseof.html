@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default "en" }}" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if not .IsHome }}{{ .Title }} | {{ end }}{{ .Site.Title }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Title }}{{ end }}">
+
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717a;
+      --border: #e4e4e7;
+      --accent: #f4f4f5;
+      --accent-foreground: #18181b;
+      --radius: 0.5rem;
+      --brand: #f76b15;
+      --brand-hover: #ff8c3a;
+    }
+    html.dark {
+      --background: #09090b;
+      --foreground: #fafafa;
+      --muted: #27272a;
+      --muted-foreground: #a1a1aa;
+      --border: #27272a;
+      --accent: #27272a;
+      --accent-foreground: #fafafa;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <style type="text/tailwindcss">
+    @import "tailwindcss";
+    @custom-variant dark (&:where(.dark, .dark *));
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="{{ "css/syntax.css" | relURL }}">
+  <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+
+  <script>
+    (function() {
+      var theme = localStorage.getItem('theme') || 'dark';
+      if (theme === 'dark') { document.documentElement.classList.add('dark'); }
+      else { document.documentElement.classList.remove('dark'); }
+    })();
+  </script>
+</head>
+<body class="bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-400 font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif] antialiased">
+  {{- partial "navbar.html" . -}}
+
+  <div class="flex min-h-screen">
+    <aside id="sidebar" class="sidebar-panel w-[260px] min-w-[260px] shrink-0 bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 sticky top-0 h-screen overflow-y-auto max-lg:fixed max-lg:top-[60px] max-lg:left-0 max-lg:bottom-0 max-lg:z-30 max-lg:-translate-x-full max-lg:transition-transform max-lg:duration-250 max-lg:ease-in-out">
+      {{- partial "sidebar.html" . -}}
+    </aside>
+
+    <div class="bg-white dark:bg-zinc-950 min-w-0 flex-1">
+      <div class="flex max-w-full px-10 py-8 gap-8 max-lg:px-4 max-lg:py-6">
+        <article class="markdown-body flex-1 min-w-0 leading-relaxed text-zinc-700 dark:text-zinc-400">
+          {{- block "main" . }}{{ end -}}
+        </article>
+        {{- if not .IsHome -}}
+        <div class="w-[220px] min-w-[220px] shrink-0 max-lg:hidden">
+          {{- partial "toc.html" . -}}
+        </div>
+        {{- end -}}
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="{{ "js/main.js" | relURL }}"></script>
+</body>
+</html>
